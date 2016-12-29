@@ -57,20 +57,25 @@ EOD;
     /** @var int Index of the last written row */
     protected $lastWrittenRowIndex = 0;
 
+    /** @var array contain column width information */
+    protected $columnWidthData = [];
+
     /**
      * @param \Box\Spout\Writer\Common\Sheet $externalSheet The associated "external" sheet
      * @param string $worksheetFilesFolder Temporary folder where the files to create the XLSX will be stored
      * @param \Box\Spout\Writer\XLSX\Helper\SharedStringsHelper $sharedStringsHelper Helper for shared strings
      * @param \Box\Spout\Writer\XLSX\Helper\StyleHelper Helper to work with styles
      * @param bool $shouldUseInlineStrings Whether inline or shared strings should be used
+     * @param array $columnWidthData contain column width information
      * @throws \Box\Spout\Common\Exception\IOException If the sheet data file cannot be opened for writing
      */
-    public function __construct($externalSheet, $worksheetFilesFolder, $sharedStringsHelper, $styleHelper, $shouldUseInlineStrings)
+    public function __construct($externalSheet, $worksheetFilesFolder, $sharedStringsHelper, $styleHelper, $shouldUseInlineStrings, $columnWidthData)
     {
         $this->externalSheet = $externalSheet;
         $this->sharedStringsHelper = $sharedStringsHelper;
         $this->styleHelper = $styleHelper;
         $this->shouldUseInlineStrings = $shouldUseInlineStrings;
+        $this->columnWidthData = $columnWidthData;
 
         /** @noinspection PhpUnnecessaryFullyQualifiedNameInspection */
         $this->stringsEscaper = \Box\Spout\Common\Escaper\XLSX::getInstance();
@@ -92,7 +97,29 @@ EOD;
         $this->throwIfSheetFilePointerIsNotAvailable();
 
         fwrite($this->sheetFilePointer, self::SHEET_XML_FILE_HEADER);
+
+        if(!empty($this->columnWidthData)) {
+            $this->addColumnsWidth();
+        }
+
         fwrite($this->sheetFilePointer, '<sheetData>');
+    }
+
+    /**
+     * Add columns width after header.
+     * 
+     * @return void
+     */
+    private function addColumnsWidth()
+    {
+        foreach($this->columnWidthData as $c) {
+            fwrite($this->sheetFilePointer, 
+                '<cols><col min="' . $c['min'] .
+                '" max="' . $c['max'] .
+                '" width="' . $c['width'] .
+                '" customWidth="1"/></cols>'
+            );
+        }
     }
 
     /**

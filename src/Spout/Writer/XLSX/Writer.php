@@ -30,6 +30,9 @@ class Writer extends AbstractMultiSheetsWriter
     /** @var Internal\Workbook The workbook for the XLSX file */
     protected $book;
 
+    /** @var array contain column width information */
+    protected $columnWidthData = [];
+
     /**
      * Sets a custom temporary folder for creating intermediate files/folders.
      * This must be set before opening the writer.
@@ -65,6 +68,27 @@ class Writer extends AbstractMultiSheetsWriter
     }
 
     /**
+     * Add a width definition for the next sheet that will be generated
+     * 
+     * @param number $width column width
+     * @param number $min   column position ( A=1 ) where this width should take effect
+     * @param number $max   end of range where width take effect ( default to min )
+     * @return Writer
+     */
+    public function setColumnsWidth($width, $min, $max = null)
+    {
+        if ($max === null) {
+            $max = $min;
+        }
+        $this->columnWidthData[] = [
+            'width' => $width,
+            'min' => $min,
+            'max' => $max
+        ];
+        return $this;
+    }
+
+    /**
      * Configures the write and sets the current sheet pointer to a new sheet.
      *
      * @return void
@@ -74,7 +98,7 @@ class Writer extends AbstractMultiSheetsWriter
     {
         if (!$this->book) {
             $tempFolder = ($this->tempFolder) ? : sys_get_temp_dir();
-            $this->book = new Workbook($tempFolder, $this->shouldUseInlineStrings, $this->shouldCreateNewSheetsAutomatically, $this->defaultRowStyle);
+            $this->book = new Workbook($tempFolder, $this->shouldUseInlineStrings, $this->shouldCreateNewSheetsAutomatically, $this->defaultRowStyle, $this->columnWidthData);
             $this->book->addNewSheetAndMakeItCurrent();
         }
     }
